@@ -17,17 +17,25 @@ from utils import prune_tables
 
 def import_custom_json(path: str, conn: sqlite3.Connection) -> pd.DataFrame:
     """
-    Imports a custom CVE JSON file to a sqlite3 database
+    Imports a custom CVE JSON file in NVD 2.0 format to a sqlite3 database.
+    Expects the top-level structure: { "vulnerabilities": [ { "cve": { ... } } ] }
     """
-
     try:
-        with open(path) as file:
+        with open(path, encoding='utf-8') as file:
             cve_data = json.load(file)
-            df = pd.DataFrame(cve_data)
     except IOError as err:
         raise IOError(err)
 
-    df = preprocess_jsons(df)
+    # NVD 2.0: extract the vulnerabilities list
+    if 'vulnerabilities' in cve_data:
+        vulnerabilities = cve_data['vulnerabilities']
+    else:
+        raise ValueError(
+            "Unexpected JSON format: top-level key 'vulnerabilities' not found. "
+            "Expected NVD 2.0 format."
+        )
+
+    df = preprocess_jsons(vulnerabilities)
     df = df.applymap(str)
     assert df.cve_id.is_unique, 'Primary keys are not unique in cve records!'
     df.to_sql(name="cve", con=conn, if_exists="replace", index=False)

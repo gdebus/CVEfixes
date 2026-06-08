@@ -9,7 +9,7 @@ DATABASE_NAME = 'CVEfixes_sample.db'
 USER = None
 TOKEN = None
 SAMPLE_LIMIT = 25
-NUM_WORKERS = 4
+NUM_WORKERS = 1
 LOGGING_LEVEL = logging.WARNING
 
 # full path to the .db file
@@ -23,9 +23,16 @@ log_level_map = {'DEBUG': logging.DEBUG,
                  'CRITICAL': logging.CRITICAL
                  }
 
-logging.basicConfig(level=LOGGING_LEVEL,
-                    format='%(asctime)s %(name)s %(levelname)s %(message)s',
-                    datefmt='%m/%d/%Y %H:%M:%S')
+logging.basicConfig(
+    level=LOGGING_LEVEL,
+    format='%(asctime)s %(name)s %(levelname)s %(message)s',
+    datefmt='%m/%d/%Y %H:%M:%S',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('CVEfixes.log', mode='a'),
+    ]
+)
+
 logger = logging.getLogger('CVEfixes')
 logger.removeHandler(sys.stderr)
 
@@ -60,7 +67,7 @@ def read_config() -> None:
 
 if not config_read:
     read_config()
-    logger.setLevel(LOGGING_LEVEL)
+    logger.setLevel(logging.INFO)
     logging.getLogger("requests").setLevel(LOGGING_LEVEL)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("urllib3.connection").setLevel(logging.WARNING)
